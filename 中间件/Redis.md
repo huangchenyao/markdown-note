@@ -370,8 +370,34 @@ Redis 集群使用数据分片（sharding）而非一致性哈希（consistency 
 
 ## Redis做分布式锁
 
+
+
 ## Redis为什么快
 
 1. redis是基于内存的，内存的读写速度非常快。
-2. redis是单线程的，省去了很多上下文切换线程的时间。
-3. redis使用多路复用技术，可以处理并发的连接。
+
+2. 数据结构简单，对数据操作也简单，Redis中的数据结构是专门进行设计的。
+
+3. redis是单线程的，省去了很多上下文切换线程的时间。
+
+4. redis使用多路复用技术，可以处理并发的连接。
+
+### 单线程
+
+- 多线程处理可能涉及到锁 
+- 多线程处理会涉及到线程切换而消耗CPU
+
+### 多路复用
+
+对于一次IO访问（以read举例），数据会先被拷贝到操作系统内核的缓冲区中，然后才会从操作系统内核的缓冲区拷贝到应用程序的地址空间。所以说，当一个read操作发生时，它会经历两个阶段：
+
+1. 等待数据准备
+2. 将数据从内核拷贝到进程中
+
+IO multiplexing就是我们说的`select`，`poll`，`epoll`，有些地方也称这种IO方式为`event driven IO`。`select/epoll`的好处就在于单个process就可以同时处理多个网络连接的IO。它的基本原理就是select，poll，epoll这个function会不断的轮询所负责的所有socket，当某个socket有数据到达了，就通知用户进程。
+
+![I/O 多路复用（ IO multiplexing）](https://pic.iminho.me/wiki/uploads/blog/201810/attach_1562465e5c832c14.png)
+
+当用户进程调用了select，那么整个进程会被block，而同时，kernel会“监视”所有select负责的socket，当任何一个socket中的数据准备好了，select就会返回。这个时候用户进程再调用read操作，将数据从kernel拷贝到用户进程。
+
+所以，I/O 多路复用的特点是通过一种机制一个进程能同时等待多个文件描述符，而这些文件描述符（套接字描述符）其中的任意一个进入读就绪状态，select()函数就可以返回。
