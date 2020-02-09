@@ -14,8 +14,15 @@
 - [ ] 带数据
 - [ ] es
 - [ ] redis
+- [ ] 学习财务知识，财务系统架构等等
 
 ## 技术栈
+
+- java
+  - 数据结构
+  - jvm
+  - 并发编程
+  - 网络编程
 
 - 应用
   - springboot——升级2.0
@@ -28,11 +35,15 @@
   - 消息队列：kafka、rabbitmq
   - elasticsearch
   - redis
+    - redis实战
+    - redis设计与实现（原理）
   - zookeeper
 - 部署
+  - 自动化部署
   - docker
   - K8s
 - 数据
   - 高斯db
   - oracle
   - 大数据方面
+- 分布式、微服务一致性问题
