@@ -14,6 +14,22 @@ Redis是一个开源的使用ANSI C语言编写、遵守BSD协议、支持网络
 2. 非关系型数据库
 3. 支持多种数据结构
 
+## Docker运行
+
+- 下载镜像
+
+  `Docker pull redis`
+
+- 启动
+
+  `docker run --name my-redis -d redis`
+
+- 连接redis
+
+  `docker exec -it my-redis redis-cli`
+
+
+
 ## 数据类型
 
 |        数据类型         |                          存储的值                           |
