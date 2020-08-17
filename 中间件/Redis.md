@@ -22,7 +22,11 @@ Redis是一个开源的使用ANSI C语言编写、遵守BSD协议、支持网络
 
 - 启动
 
-  `docker run --name my-redis -d redis`
+  `docker run --name my-redis -p 6379:6379 -d redis --appendonly yes`
+
+  `-p 6379:6379` 指定端口
+
+  `--appendonly yes` 持久化
 
 - 连接redis
 
