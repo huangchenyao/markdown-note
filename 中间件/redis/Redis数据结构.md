@@ -2,7 +2,11 @@
 
 # Redis数据结构
 
+> 摘录自 https://redisbook.readthedocs.io/en/latest/index.html
+
 ## 内部数据结构
+
+在 Redis 的内部， 数据结构类型值由高效的数据结构和算法进行支持， 并且在 Redis 自身的构建当中， 也大量用到了这些数据结构。
 
 ### SDS（Simple Dynamic String，简单动态字符串）
 
@@ -232,9 +236,23 @@ redis的rehash操作不是一次性完成的，会分散到多个步骤（增、
 
 跳跃表以有序的方式在层次化的链表中保存元素， 效率和平衡树媲美 —— 查找、删除、添加等操作都可以在对数期望时间下完成， 并且比起平衡树来说， 跳跃表的实现要简单直观得多。
 
+#### redis中的实现
+
+1. 允许重复的 `score` 值：多个不同的 `member` 的 `score` 值可以相同。
+2. 进行对比操作时，不仅要检查 `score` 值，还要检查 `member` ：当 `score` 值可以重复时，单靠 `score` 值无法判断一个元素的身份，所以需要连 `member` 域都一并检查才行。
+3. 每个节点都带有一个高度为 1 层的后退指针，用于从表尾方向向表头方向迭代：当执行 [ZREVRANGE](http://redis.readthedocs.org/en/latest/sorted_set/zrevrange.html#zrevrange) 或 [ZREVRANGEBYSCORE](http://redis.readthedocs.org/en/latest/sorted_set/zrevrangebyscore.html#zrevrangebyscore) 这类以逆序处理有序集的命令时，就会用到这个属性。
+
+ 跳跃表在 Redis 的唯一作用， 就是实现有序集数据类型。
+
 
 
 ## 内存映射数据结构
+
+### 整数集合
+
+
+
+### 压缩列表
 
 
 
