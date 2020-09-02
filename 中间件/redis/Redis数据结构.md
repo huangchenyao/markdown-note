@@ -250,6 +250,48 @@ redis的rehash操作不是一次性完成的，会分散到多个步骤（增、
 
 ### 整数集合
 
+整数集合（intset）用于有序、无重复地保存多个整数值， 根据元素的值， 自动选择该用什么长度的整数类型来保存元素。
+
+根据需要， intset 可以自动从 `int16_t` 升级到 `int32_t` 或 `int64_t`。
+
+Intset 是集合键的底层实现之一，如果一个集合：
+
+1. 只保存着整数元素；
+
+2. 元素的数量不多；
+
+那么 Redis 就会使用 intset 来保存集合元素。
+
+#### 定义
+
+```c
+typedef struct intset {
+    // 保存元素所使用的类型的长度
+    uint32_t encoding;
+
+    // 元素个数
+    uint32_t length;
+
+    // 保存元素的数组
+    int8_t contents[];
+} intset;
+
+#define INTSET_ENC_INT16 (sizeof(int16_t))
+#define INTSET_ENC_INT32 (sizeof(int32_t))
+#define INTSET_ENC_INT64 (sizeof(int64_t))
+```
+
+#### 升级
+
+当插入的数据比现有的长度要大时，需要升级集合以及转移数据
+
+1. 对新元素进行检测，看保存这个新元素需要什么类型的编码；
+2. 将集合 `encoding` 属性的值设置为新编码类型，并根据新编码类型，对整个 `contents` 数组进行内存重分配。
+3. 调整 `contents` 数组内原有元素在内存中的排列方式，从旧编码调整为新编码。
+4. 将新元素添加到集合中。
+
+只能升级不能降级。
+
 
 
 ### 压缩列表
