@@ -328,12 +328,94 @@ entry
 
 ## 基础数据类型
 
+### Redis对象处理
+
+redis对象结构
+
+```c
+/*
+ * Redis 对象
+ */
+typedef struct redisObject {
+    // 类型
+    unsigned type:4;
+
+    // 对齐位
+    unsigned notused:2;
+
+    // 编码方式
+    unsigned encoding:4;
+
+    // LRU 时间（相对于 server.lruclock）
+    unsigned lru:22;
+
+    // 引用计数
+    int refcount;
+
+    // 指向对象的值
+    void *ptr;
+} robj;
+```
+
+type
+
+```c
+/*
+ * 对象类型
+ */
+#define REDIS_STRING 0  // 字符串
+#define REDIS_LIST 1    // 列表
+#define REDIS_SET 2     // 集合
+#define REDIS_ZSET 3    // 有序集
+#define REDIS_HASH 4    // 哈希表
+```
+
+Encoding
+
+```c
+/*
+ * 对象编码
+ */
+#define REDIS_ENCODING_RAW 0            // 编码为字符串
+#define REDIS_ENCODING_INT 1            // 编码为整数
+#define REDIS_ENCODING_HT 2             // 编码为哈希表
+#define REDIS_ENCODING_ZIPMAP 3         // 编码为 zipmap
+#define REDIS_ENCODING_LINKEDLIST 4     // 编码为双端链表
+#define REDIS_ENCODING_ZIPLIST 5        // 编码为压缩列表
+#define REDIS_ENCODING_INTSET 6         // 编码为整数集合
+#define REDIS_ENCODING_SKIPLIST 7       // 编码为跳跃表
+```
+
+redis一种数据类型会有多种编码方式，数据类型对应的编码方式如下：
+
+![image-20200903120331626](/Users/huangchenyao/Documents/markdown-note/中间件/redis/Redis数据结构.assets/image-20200903120331626.png)
+
+Redis 使用自己实现的对象机制来实现类型判断、命令多态和基于引用计数的垃圾回收。
+
 ### 字符串
+
+字符串类型分别使用 `REDIS_ENCODING_INT` 和 `REDIS_ENCODING_RAW` 两种编码：
+
+- `REDIS_ENCODING_INT` 使用 `long` 类型来保存 `long` 类型值。
+- `REDIS_ENCODING_RAW` 则使用 `sdshdr` 结构来保存 `sds` （也即是 `char*` )、 `long long` 、 `double` 和 `long double` 类型值。
+- 新创建的字符串默认使用 `REDIS_ENCODING_RAW` 编码， 在将字符串作为键或者值保存进数据库时， 程序会尝试将字符串转为 `REDIS_ENCODING_INT` 编码。
 
 ### 哈希表
 
+当使用 `REDIS_ENCODING_ZIPLIST` 编码哈希表时， 程序通过将键和值一同推入压缩列表， 从而形成保存哈希表所需的键-值对结构。
+
+创建空白哈希表时， 程序默认使用 `REDIS_ENCODING_ZIPLIST` 编码， 当以下任何一个条件被满足时， 程序将编码从 `REDIS_ENCODING_ZIPLIST` 切换为 `REDIS_ENCODING_HT` ：
+
+- 哈希表中某个键或某个值的长度大于 `server.hash_max_ziplist_value` （默认值为 `64` ）。
+- 压缩列表中的节点数量大于 `server.hash_max_ziplist_entries` （默认值为 `512` ）。
+
 ### 列表
+
+
 
 ### 集合
 
+
+
 ### 有序集
+
