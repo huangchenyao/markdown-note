@@ -394,6 +394,8 @@ Redis 使用自己实现的对象机制来实现类型判断、命令多态和�
 
 ### 字符串
 
+#### 编码选择
+
 字符串类型分别使用 `REDIS_ENCODING_INT` 和 `REDIS_ENCODING_RAW` 两种编码：
 
 - `REDIS_ENCODING_INT` 使用 `long` 类型来保存 `long` 类型值。
@@ -402,20 +404,62 @@ Redis 使用自己实现的对象机制来实现类型判断、命令多态和�
 
 ### 哈希表
 
-当使用 `REDIS_ENCODING_ZIPLIST` 编码哈希表时， 程序通过将键和值一同推入压缩列表， 从而形成保存哈希表所需的键-值对结构。
+#### 编码选择
 
-创建空白哈希表时， 程序默认使用 `REDIS_ENCODING_ZIPLIST` 编码， 当以下任何一个条件被满足时， 程序将编码从 `REDIS_ENCODING_ZIPLIST` 切换为 `REDIS_ENCODING_HT` ：
+创建空白哈希表时， 程序默认使用 `REDIS_ENCODING_ZIPLIST` 编码， 当使用 `REDIS_ENCODING_ZIPLIST` 编码哈希表时， 程序通过将键和值一同推入压缩列表， 从而形成保存哈希表所需的键-值对结构。
+
+#### 编码转换
+
+当以下任何一个条件被满足时， 程序将编码从 `REDIS_ENCODING_ZIPLIST` 切换为 `REDIS_ENCODING_HT` ：
 
 - 哈希表中某个键或某个值的长度大于 `server.hash_max_ziplist_value` （默认值为 `64` ）。
 - 压缩列表中的节点数量大于 `server.hash_max_ziplist_entries` （默认值为 `512` ）。
 
 ### 列表
 
+#### 编码选择
 
+创建新列表时 Redis 默认使用 `REDIS_ENCODING_ZIPLIST` 编码。
+
+#### 编码转换
+
+当以下任意一个条件被满足时， 列表会被转换成 `REDIS_ENCODING_LINKEDLIST` 编码：
+
+- 试图往列表新添加一个字符串值，且这个字符串的长度超过 `server.list_max_ziplist_value` （默认值为 `64` ）。
+- `ziplist` 包含的节点超过 `server.list_max_ziplist_entries` （默认值为 `512` ）。
 
 ### 集合
 
+#### 编码选择
 
+第一个添加到集合的元素， 决定了创建集合时所使用的编码：
+
+- 如果第一个元素可以表示为 `long long` 类型值（也即是，它是一个整数）， 那么集合的初始编码为 `REDIS_ENCODING_INTSET` 。
+- 否则，集合的初始编码为 `REDIS_ENCODING_HT` 。
+
+#### 编码转换
+
+如果一个集合使用 `REDIS_ENCODING_INTSET` 编码， 那么当以下任何一个条件被满足时， 这个集合会被转换成 `REDIS_ENCODING_HT` 编码：
+
+- `intset` 保存的整数值个数超过 `server.set_max_intset_entries` （默认值为 `512` ）。
+- 试图往集合里添加一个新元素，并且这个元素不能被表示为 `long long` 类型（也即是，它不是一个整数）。
 
 ### 有序集
 
+#### 编码选择
+
+在通过 zadd 命令添加第一个元素到空 `key` 时， 程序通过检查输入的第一个元素来决定该创建什么编码的有序集。
+
+如果第一个元素符合以下条件的话， 就创建一个 `REDIS_ENCODING_ZIPLIST` 编码的有序集：
+
+- 服务器属性 `server.zset_max_ziplist_entries` 的值大于 `0` （默认为 `128` ）。
+- 元素的 `member` 长度小于服务器属性 `server.zset_max_ziplist_value` 的值（默认为 `64` ）。
+
+否则，程序就创建一个 `REDIS_ENCODING_SKIPLIST` 编码的有序集。
+
+#### 编码转换
+
+对于一个 `REDIS_ENCODING_ZIPLIST` 编码的有序集， 只要满足以下任一条件， 就将它转换为 `REDIS_ENCODING_SKIPLIST` 编码：
+
+- `ziplist` 所保存的元素数量超过服务器属性 `server.zset_max_ziplist_entries` 的值（默认值为 `128` ）
+- 新添加元素的 `member` 的长度大于服务器属性 `server.zset_max_ziplist_value` 的值（默认值为 `64` ）
