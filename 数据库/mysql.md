@@ -135,7 +135,7 @@ InnoDB的行锁是通过给索引上的索引项加锁来实现的，只有通�
 
 假设有这些数据：
 
-![image-20201013204718850](/Users/huangchenyao/Documents/markdown-note/数据库/mysql.assets/image-20201013204718850.png)
+![image-20201013210922812](/Users/huangchenyao/Documents/markdown-note/数据库/mysql.assets/image-20201013210922812.png)
 
 ##### 临键锁 next-key lock
 
@@ -144,7 +144,7 @@ InnoDB的行锁是通过给索引上的索引项加锁来实现的，只有通�
 锁住索引的记录区间加下一个记录区间，这个区间是左开右闭的。
 
 ```mysql
-select * from user where age > 9 and age < 12 for update;
+select * from user where age > 8 and age < 12 for update;
 ```
 
 锁住(7, 11]与下一个区间(11, 14]，即(7, 14]。
@@ -155,7 +155,11 @@ select * from user where age > 9 and age < 12 for update;
 
 在上述检索条件下，如果没有命中记录，则退化成Gap锁，锁住数据不存在的区间（左开右开）。
 
+```mysql
+select * from user where age > 7 and age < 11 for update;
+```
 
+锁住(7, 11)。
 
 ##### 记录锁 record lock
 
