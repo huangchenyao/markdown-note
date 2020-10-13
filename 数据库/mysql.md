@@ -129,6 +129,40 @@ InnoDB的行锁是通过给索引上的索引项加锁来实现的，只有通�
 
 > 当事务想去进行锁表时，可以先判断意向锁是否存在，存在时则可快速的返回，告知该表不能启用表锁（也就是会锁住对应会话），提高了加锁的效率。
 
+#### 行锁
+
+行锁锁的是索引上的索引项，只有通过索引条件进行数据检索，Innodb才使用行级锁。否则，将使用表锁（锁住索引的所有记录）。
+
+假设有这些数据：
+
+![image-20201013204718850](/Users/huangchenyao/Documents/markdown-note/数据库/mysql.assets/image-20201013204718850.png)
+
+##### 临键锁 next-key lock
+
+当sql执行按照索引进行数据的检索时，查询条件为范围查找（between and < > 等等）并有数据命中，则SQL语句加上的锁为next-key lock。
+
+锁住索引的记录区间加下一个记录区间，这个区间是左开右闭的。
+
+```mysql
+select * from user where age > 9 and age < 12 for update;
+```
+
+锁住(7, 11]与下一个区间(11, 14]，即(7, 14]。
+
+##### 间隙锁 gap lock
+
+当记录不存在时，临键锁退化成gap lock。
+
+在上述检索条件下，如果没有命中记录，则退化成Gap锁，锁住数据不存在的区间（左开右开）。
+
+
+
+##### 记录锁 record lock
+
+唯一性索引条件为精准匹配，退化成record lock。
+
+当SQL执行按照唯一性（Primary Key，Unique Key）索引进行数据的检索时，查询条件等值匹配且查询的数据存在，这是SQL语句上加的锁即为记录锁Record lock，锁住具体的索引项。
+
 
 
 ### MVCC Multi-Version Concurrency Control（多版本并发控制）
